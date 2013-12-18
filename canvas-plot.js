@@ -13,7 +13,7 @@ var Plot = function() {
 
     var canvas = null;
     var context = null;
-    var world = null;
+    var view = null;
 
     var widgets = {
         canvas: null,
@@ -75,7 +75,7 @@ var Plot = function() {
         camX = canvas.width / 2;
         camY = canvas.height / 2;
 
-        world = new Matrix3 ();
+        view = mat2d.create ();
         timer = new Timer (5);
     }.bind(this);
 
@@ -166,16 +166,20 @@ var Plot = function() {
         var zoomProgress = parseInt(widgets.zoom.value) / parseInt(widgets.zoom.max);
         var zoom = this.minZoom + (this.maxZoom - this.minZoom) * zoomProgress;
 
-        world.translate (camX, camY);
-        world.scale (zoom, zoom);
+        mat2d.identity (view);
+        mat2d.translate (view, view, vec2.fromValues (camX, camY));
+        mat2d.scale (view, view, vec2.fromValues (zoom, zoom));
+
+        // half-pixel offset.
+        mat2d.translate (view, view, vec2.fromValues (0.5, 0.5));
 
         context.setTransform (
-            world.mat[0],
-            world.mat[1],
-            world.mat[2],
-            world.mat[3],
-            world.mat[4] + 0.5,
-            world.mat[5] + 0.5
+            view[0],
+            view[1],
+            view[2],
+            view[3],
+            view[4],
+            view[5]
         );
 
         if (timer.finished()) {
@@ -204,11 +208,11 @@ var Plot = function() {
         var halfWidth = stepsX * deltaX / 2;
         var halfHeight = stepsY * deltaY / 2;
 
-        var topleft = [0 - halfWidth, 0 - halfHeight];
-        var bottomright = [0 + halfWidth, 0 + halfHeight];
+        var topleft = vec2.fromValues (-halfWidth, -halfHeight);
+        var bottomright = vec2.fromValues (halfWidth, halfHeight);
 
-        //var topleft = world.transformPoint (-halfWidth, -halfHeight);
-        //var bottomright = world.transformPoint (halfWidth, halfHeight);
+        //vec2.transformMat2d (topleft, topleft, view);
+        //vec2.transformMat2d (bottomright, bottomright, view);
 
         var left = topleft [0];
         var top = topleft [1];
@@ -240,11 +244,11 @@ var Plot = function() {
         var halfWidth = stepsX * deltaX / 2;
         var halfHeight = stepsY * deltaY / 2;
 
-        var topleft = [0 - halfWidth, 0 - halfHeight];
-        var bottomright = [0 + halfWidth, 0 + halfHeight];
+        var topleft = vec2.fromValues (-halfWidth, -halfHeight);
+        var bottomright = vec2.fromValues (halfWidth, halfHeight);
 
-        //var topleft = world.transformPoint (-halfWidth, -halfHeight);
-        //var bottomright = world.transformPoint (halfWidth, halfHeight);
+        //vec2.transformMat2d (topleft, topleft, view););
+        //vec2.transformMat2d (bottomright, bottomright, view);
 
         var left = topleft [0];
         var top = topleft [1];
@@ -332,40 +336,6 @@ var Plot = function() {
         // show play icon.
         widgets.play.childNodes[1].hidden = false;
         widgets.play.childNodes[3].hidden = true;
-    };
-
-    var Matrix3 = function () {
-        this.mat = [1,0,0,1,0,0,0,0,1];
-
-        this.identity = function () {
-            this.mat [0] = 1;
-            this.mat [1] = 0;
-            this.mat [2] = 0;
-            this.mat [3] = 1;
-            this.mat [4] = 0;
-            this.mat [5] = 0;
-            this.mat [6] = 0;
-            this.mat [7] = 0;
-            this.mat [8] = 1;
-        }
-        this.scale = function (x, y) {
-            this.mat [0] = x;
-            this.mat [3] = y;
-        };
-        this.skew = function (x, y) {
-            this.mat [1] = x;
-            this.mat [2] = y;
-        };
-        this.translate = function (x, y) {
-            this.mat [4] = x;
-            this.mat [5] = y;
-        };
-        this.transformPoint = function (x, y) {
-            return [
-                this.mat[0] * x + this.mat[2] * y + this.mat[4],
-                this.mat[1] * x + this.mat[3] * y + this.mat[5]
-            ]
-        };
     };
 
     var Timer = function (_duration) {
