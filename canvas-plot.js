@@ -230,21 +230,6 @@ var Plot = function() {
         context.strokeStyle = this.axisLineColor;
         context.stroke ();
 
-        for (var x = left; x <= right; x+=deltaX) {
-            context.font = this.axisFont;
-            context.textAlign = "center";
-            context.textBaseline = "top";
-            context.fillStyle = this.axisLabelColor;
-            context.fillText(x.toFixed(0), x, 0);
-        }
-        for (var y = top; y <= bottom; y+=deltaY) {
-            context.font = this.axisFont;
-            context.textAlign = "center";
-            context.textBaseline = "top";
-            context.fillStyle = this.axisLabelColor;
-            context.fillText(y.toFixed(0), 0, y);
-        }
-
         context.restore ();
     }.bind(this);
 
