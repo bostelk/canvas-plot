@@ -29,6 +29,7 @@ var Plot = function() {
         zoom: null,
     };
 
+    var timer = null;
     var playing = false;
 
     var camX = 0;
