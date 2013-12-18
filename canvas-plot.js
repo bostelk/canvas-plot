@@ -294,19 +294,23 @@ var Plot = function() {
 
         context.save ();
 
+        // label x-axis.
         context.font = this.axisFont;
         context.textAlign = "center";
         context.textBaseline = "top";
         context.fillStyle = this.axisLabelColor;
-
-        // label x-axis.
         for (var x = center[0]; x <= right; x+=deltaX) {
             context.fillText((x).toFixed(0), x, center [1]);
         }
         for (var x = center[0]; x >= left; x-=deltaX) {
             context.fillText((x).toFixed(0), x, center [1]);
         }
+
         // label y-axis.
+        context.font = this.axisFont;
+        context.textAlign = "right";
+        context.textBaseline = "middle";
+        context.fillStyle = this.axisLabelColor;
         for (var y = center[1]; y <= bottom; y+=deltaY) {
             context.fillText((y).toFixed(0), center [0], y);
         }
