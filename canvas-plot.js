@@ -233,6 +233,9 @@ var Plot = function() {
         vec2.transformMat2d (topleft, topleft, invView);
         vec2.transformMat2d (bottomright, bottomright, invView);
 
+        var center = vec2.fromValues (canvas.width / 2, canvas.height / 2);
+        vec2.transformMat2d (center, center, invViewProj);
+
         var left = topleft [0];
         var top = topleft [1];
         var right = bottomright [0];
@@ -241,16 +244,28 @@ var Plot = function() {
         context.save ();
 
         context.beginPath ();
-        for (var x = left; x <= right; x+=deltaX) {
+        context.lineWidth = 1;
+        context.strokeStyle = this.axisLineColor;
+
+        // x-axis.
+        for (var x = center[0]; x <= right; x+=deltaX) {
             context.moveTo (x, top);
             context.lineTo (x, bottom);
         }
-        for (var y = top; y <= bottom; y+=deltaY) {
+        for (var x = center[0]; x >= left; x-=deltaX) {
+            context.moveTo (x, top);
+            context.lineTo (x, bottom);
+        }
+        // y-axis.
+        for (var y = center[1]; y <= bottom; y+=deltaY) {
             context.moveTo (left, y);
             context.lineTo (right, y);
         }
-        context.lineWidth = 1;
-        context.strokeStyle = this.axisLineColor;
+        for (var y = center[1]; y >= top; y-=deltaY) {
+            context.moveTo (left, y);
+            context.lineTo (right, y);
+        }
+
         context.stroke ();
 
         context.restore ();
@@ -279,18 +294,23 @@ var Plot = function() {
 
         context.save ();
 
-        for (var x = left; x <= right; x+=deltaX) {
-            context.font = this.axisFont;
-            context.textAlign = "center";
-            context.textBaseline = "top";
-            context.fillStyle = this.axisLabelColor;
+        context.font = this.axisFont;
+        context.textAlign = "center";
+        context.textBaseline = "top";
+        context.fillStyle = this.axisLabelColor;
+
+        // label x-axis.
+        for (var x = center[0]; x <= right; x+=deltaX) {
             context.fillText((x).toFixed(0), x, center [1]);
         }
-        for (var y = top; y <= bottom; y+=deltaY) {
-            context.font = this.axisFont;
-            context.textAlign = "center";
-            context.textBaseline = "top";
-            context.fillStyle = this.axisLabelColor;
+        for (var x = center[0]; x >= left; x-=deltaX) {
+            context.fillText((x).toFixed(0), x, center [1]);
+        }
+        // label y-axis.
+        for (var y = center[1]; y <= bottom; y+=deltaY) {
+            context.fillText((y).toFixed(0), center [0], y);
+        }
+        for (var y = center[1]; y >= top; y-=deltaY) {
             context.fillText((y).toFixed(0), center [0], y);
         }
 
