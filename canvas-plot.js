@@ -13,7 +13,13 @@ var Plot = function() {
 
     var canvas = null;
     var context = null;
+
+    var porj = null;
     var view = null;
+    var viewProj = null;
+    var invView = null;
+    var invProj = null;
+    var invViewProj = null;
 
     var widgets = {
         canvas: null,
@@ -72,10 +78,18 @@ var Plot = function() {
 
         context = canvas.getContext('2d');
 
-        camX = canvas.width / 2;
-        camY = canvas.height / 2;
+        proj = mat2d.create();
+        view = mat2d.create();
+        viewProj = mat2d.create();
+        invView = mat2d.create();
+        invProj = mat2d.create();
+        invViewProj = mat2d.create();
 
-        view = mat2d.create ();
+        mat2d.translate (proj, proj, vec2.fromValues (
+            canvas.width / 2,
+            canvas.height / 2
+        ));
+
         timer = new Timer (5);
     }.bind(this);
 
@@ -167,19 +181,24 @@ var Plot = function() {
         var zoom = this.minZoom + (this.maxZoom - this.minZoom) * zoomProgress;
 
         mat2d.identity (view);
-        mat2d.translate (view, view, vec2.fromValues (camX, camY));
         mat2d.scale (view, view, vec2.fromValues (zoom, zoom));
+        mat2d.translate (view, view, vec2.fromValues (camX, camY));
 
-        // half-pixel offset.
-        mat2d.translate (view, view, vec2.fromValues (0.5, 0.5));
+        mat2d.mul (viewProj, view, proj);
+
+        mat2d.invert (invView, view);
+        mat2d.invert (invProj, proj);
+        mat2d.invert (invViewProj, viewProj);
 
         context.setTransform (
-            view[0],
-            view[1],
-            view[2],
-            view[3],
-            view[4],
-            view[5]
+            viewProj[0],
+            viewProj[1],
+            viewProj[2],
+            viewProj[3],
+
+            // half-pixel offset.
+            viewProj[4] + 0.5,
+            viewProj[5] + 0.5
         );
 
         if (timer.finished()) {
@@ -211,8 +230,8 @@ var Plot = function() {
         var topleft = vec2.fromValues (-halfWidth, -halfHeight);
         var bottomright = vec2.fromValues (halfWidth, halfHeight);
 
-        //vec2.transformMat2d (topleft, topleft, view);
-        //vec2.transformMat2d (bottomright, bottomright, view);
+        vec2.transformMat2d (topleft, topleft, invView);
+        vec2.transformMat2d (bottomright, bottomright, invView);
 
         var left = topleft [0];
         var top = topleft [1];
@@ -247,8 +266,11 @@ var Plot = function() {
         var topleft = vec2.fromValues (-halfWidth, -halfHeight);
         var bottomright = vec2.fromValues (halfWidth, halfHeight);
 
-        //vec2.transformMat2d (topleft, topleft, view););
-        //vec2.transformMat2d (bottomright, bottomright, view);
+        vec2.transformMat2d (topleft, topleft, invView);
+        vec2.transformMat2d (bottomright, bottomright, invView);
+
+        var center = vec2.fromValues (canvas.width / 2, canvas.height / 2);
+        vec2.transformMat2d (center, center, invViewProj);
 
         var left = topleft [0];
         var top = topleft [1];
@@ -262,14 +284,14 @@ var Plot = function() {
             context.textAlign = "center";
             context.textBaseline = "top";
             context.fillStyle = this.axisLabelColor;
-            context.fillText(x.toFixed(0), x, 0);
+            context.fillText((x).toFixed(0), x, center [1]);
         }
         for (var y = top; y <= bottom; y+=deltaY) {
             context.font = this.axisFont;
             context.textAlign = "center";
             context.textBaseline = "top";
             context.fillStyle = this.axisLabelColor;
-            context.fillText(y.toFixed(0), 0, y);
+            context.fillText((y).toFixed(0), center [0], y);
         }
 
         context.restore ();
