@@ -172,6 +172,9 @@ var Plot = function() {
         context.fillRect (0,0,canvas.width,canvas.height);
 
         if (dragging) {
+            canvas.style.cursor = "grabbing";
+            canvas.style.cursor = "-webkit-grabbing";
+
             var dragX = mouseX - lastX;
             var dragY = mouseY - lastY;
 
@@ -180,6 +183,9 @@ var Plot = function() {
 
             lastX = mouseX;
             lastY = mouseY;
+        } else {
+            canvas.style.cursor = "grab";
+            canvas.style.cursor = "-webkit-grab";
         }
 
         var zoomProgress = parseInt(widgets.zoom.value) / parseInt(widgets.zoom.max);
