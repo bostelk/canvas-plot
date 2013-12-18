@@ -23,8 +23,6 @@ var Plot = function() {
     };
 
     var playing = false;
-    var elapsed = 0;
-    var duration = 0;
 
     var camX = 0;
     var camY = 0;
