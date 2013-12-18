@@ -23,6 +23,7 @@ var Plot = function() {
 
     var widgets = {
         canvas: null,
+        title: null,
         play: null,
         progress: null,
         zoom: null,
@@ -67,6 +68,9 @@ var Plot = function() {
         canvas.addEventListener('mouseup', handleMouseUp.bind(this));
         canvas.addEventListener('mousedown', handleMouseDown.bind(this));
         canvas.addEventListener('wheel', handleMouseWheel.bind(this));
+
+        widgets.title = document.getElementById ('title-widget');
+        widgets.title.innerHTML = config.title;
 
         widgets.play = document.getElementById ('play-widget');
 

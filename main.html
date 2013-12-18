@@ -79,8 +79,8 @@
     <body>
     <div id="embedded-view">
         <canvas id="canvas-widget" width="632" height="334"></canvas>
-        <div class="title">
-            <header>Figure 1</header>
+        <div id="title-wrapper" class="title">
+            <header id="title-widget">Title</header>
         </div>
         <div id="controls-wrapper" class="controls">
             <button id="play-widget" class="btn" onclick="plt.toggle();">
@@ -106,6 +106,7 @@
             duration: 5,
             autoplay: true,
             closed: true,
+            title: "Figure 1",
             points: [
                 {x:0, y:-192, color:'red', size:2},
                 {x:32, y:-192, color:'purple', size:2},
