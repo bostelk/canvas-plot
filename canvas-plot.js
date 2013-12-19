@@ -292,6 +292,9 @@ var Plot = function() {
 
         mat2d.mul (viewProj, view, proj);
 
+        // half-pixel offset.
+        mat2d.translate (viewProj, viewProj, vec2.fromValues (0.5, 0.5));
+
         mat2d.invert (invView, view);
         mat2d.invert (invProj, proj);
         mat2d.invert (invViewProj, viewProj);
@@ -301,10 +304,8 @@ var Plot = function() {
             viewProj[1],
             viewProj[2],
             viewProj[3],
-
-            // half-pixel offset.
-            viewProj[4] + 0.5,
-            viewProj[5] + 0.5
+            viewProj[4],
+            viewProj[5]
         );
 
         drawGrid (canvas.width, canvas.height, 32, 32);
