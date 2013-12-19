@@ -310,7 +310,6 @@ var Plot = function() {
 
         drawGrid (canvas.width, canvas.height, 32, 32);
         drawLines (config.points, progress);
-        drawGridLabels (canvas.width, canvas.height, 32, 32);
 
         // FIXME: reset mouse z for the next frame.
         mouseZ = 0;
@@ -326,67 +325,40 @@ var Plot = function() {
         var topleft = vec2.fromValues (-halfWidth, -halfHeight);
         var bottomright = vec2.fromValues (halfWidth, halfHeight);
 
-        vec2.transformMat2d (topleft, topleft, invView);
-        vec2.transformMat2d (bottomright, bottomright, invView);
+        var cam = vec2.fromValues (0, 0);
 
-        var center = vec2.fromValues (canvas.width / 2, canvas.height / 2);
-        vec2.transformMat2d (center, center, invViewProj);
+        var screenCenter = vec2.fromValues (canvas.width / 2, canvas.height / 2);
+        vec2.transformMat2d (screenCenter, screenCenter, invViewProj);
 
-        var left = topleft [0];
-        var top = topleft [1];
-        var right = bottomright [0];
-        var bottom = bottomright [1];
-
-        context.save ();
-
-        context.beginPath ();
-        context.lineWidth = 1;
-        context.strokeStyle = this.axisLineColor;
-
-        // x-axis.
-        for (var x = center[0]; x <= right; x+=deltaX) {
-            context.moveTo (x, top);
-            context.lineTo (x, bottom);
-        }
-        for (var x = center[0]; x >= left; x-=deltaX) {
-            context.moveTo (x, top);
-            context.lineTo (x, bottom);
-        }
-        // y-axis.
-        for (var y = center[1]; y <= bottom; y+=deltaY) {
-            context.moveTo (left, y);
-            context.lineTo (right, y);
-        }
-        for (var y = center[1]; y >= top; y-=deltaY) {
-            context.moveTo (left, y);
-            context.lineTo (right, y);
-        }
-
-        context.stroke ();
-
-        context.restore ();
-    }.bind(this);
-
-    var drawGridLabels = function(width, height, deltaX, deltaY) {
-        var stepsX = Math.ceil(width / deltaX);
-        var stepsY = Math.ceil(height / deltaY);
-
-        var halfWidth = stepsX * deltaX / 2;
-        var halfHeight = stepsY * deltaY / 2;
-
-        var topleft = vec2.fromValues (-halfWidth, -halfHeight);
-        var bottomright = vec2.fromValues (halfWidth, halfHeight);
-
-        vec2.transformMat2d (topleft, topleft, invView);
-        vec2.transformMat2d (bottomright, bottomright, invView);
-
-        var center = vec2.fromValues (canvas.width / 2, canvas.height / 2);
-        vec2.transformMat2d (center, center, invViewProj);
+        vec2.add (topleft, topleft, screenCenter);
+        vec2.add (bottomright, bottomright, screenCenter);
 
         var left = topleft [0];
         var top = topleft [1];
         var right = bottomright [0];
         var bottom = bottomright [1];
+
+        var center = vec2.fromValues (camX, camY);
+        vec2.transformMat2d (center, center, invView);
+
+        var marginTopLeft = vec2.fromValues (20, 10);
+        vec2.transformMat2d (marginTopLeft, marginTopLeft, invViewProj);
+
+        var marginBottomRight = vec2.fromValues (canvas.width - 10, canvas.height - 10);
+        vec2.transformMat2d (marginBottomRight, marginBottomRight, invViewProj);
+
+        var ax = 0;
+        var ay = 0;
+
+        if (center[0] > marginBottomRight[0])
+            ax = marginBottomRight[0];
+        else if (center[0] < marginTopLeft[0])
+            ax = marginTopLeft[0];
+
+        if (center[1] > marginBottomRight[1])
+            ay = marginBottomRight[1];
+        else if (center[1] < marginTopLeft[1])
+            ay = marginTopLeft[1];
 
         context.save ();
 
@@ -395,11 +367,11 @@ var Plot = function() {
         context.textAlign = "center";
         context.textBaseline = "top";
         context.fillStyle = this.axisLabelColor;
-        for (var x = center[0]; x <= right; x+=deltaX) {
-            context.fillText((x).toFixed(0), x, center [1]);
+        for (var x = 0; x <= right; x+=deltaX) {
+            context.fillText((x).toFixed(0), x, ay);
         }
-        for (var x = center[0]; x >= left; x-=deltaX) {
-            context.fillText((x).toFixed(0), x, center [1]);
+        for (var x = 0; x >= left; x-=deltaX) {
+            context.fillText((x).toFixed(0), x, ay);
         }
 
         // label y-axis.
@@ -407,12 +379,36 @@ var Plot = function() {
         context.textAlign = "right";
         context.textBaseline = "middle";
         context.fillStyle = this.axisLabelColor;
-        for (var y = center[1]; y <= bottom; y+=deltaY) {
-            context.fillText((y).toFixed(0), center [0], y);
+        for (var y = 0; y <= bottom; y+=deltaY) {
+            context.fillText((y).toFixed(0), ax, y);
         }
-        for (var y = center[1]; y >= top; y-=deltaY) {
-            context.fillText((y).toFixed(0), center [0], y);
+        for (var y = 0; y >= top; y-=deltaY) {
+            context.fillText((y).toFixed(0), ax, y);
         }
+
+        context.beginPath ();
+        context.lineWidth = 1;
+        context.strokeStyle = this.axisLineColor;
+
+        // x-axis.
+        for (var x = 0; x <= right; x+=deltaX) {
+            context.moveTo (x, top);
+            context.lineTo (x, bottom);
+        }
+        for (var x = 0; x >= left; x-=deltaX) {
+            context.moveTo (x, top);
+            context.lineTo (x, bottom);
+        }
+        // y-axis.
+        for (var y = 0; y <= bottom; y+=deltaY) {
+            context.moveTo (left, y);
+            context.lineTo (right, y);
+        }
+        for (var y = 0; y >= top; y-=deltaY) {
+            context.moveTo (left, y);
+            context.lineTo (right, y);
+        }
+        context.stroke ();
 
         context.restore ();
     }.bind(this);
