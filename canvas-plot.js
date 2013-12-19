@@ -325,8 +325,6 @@ var Plot = function() {
         var topleft = vec2.fromValues (-halfWidth, -halfHeight);
         var bottomright = vec2.fromValues (halfWidth, halfHeight);
 
-        var cam = vec2.fromValues (0, 0);
-
         var screenCenter = vec2.fromValues (canvas.width / 2, canvas.height / 2);
         vec2.transformMat2d (screenCenter, screenCenter, invViewProj);
 
