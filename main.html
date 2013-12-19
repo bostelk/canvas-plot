@@ -77,6 +77,40 @@
             fill: #fff;
             margin: 0px auto;
         }
+
+        .zoomin-icon {
+            fill: #fff;
+            margin: 0px auto;
+        }
+
+        .zoomout-icon {
+            fill: #fff;
+            margin: 0px auto;
+        }
+
+        .resetview-icon {
+            fill: #fff;
+            margin: 0px auto;
+        }
+
+        .progress {
+            display:inline-block;
+            position:relative;
+            width:75%;
+            height:10px;
+            border:1px solid #cccccc;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            position:absolute;
+            left:0;
+            top:0;
+            background-color:#8D8D8D;
+            height:100%;
+            width:0%;
+            font-size:0px;
+        }
         </style>
         <script src="canvas-plot.js"></script>
         <script src="gl-matrix.js"></script>
@@ -101,8 +135,32 @@
                     </svg>
                 </div>
             </button>
-            <input id="progress-widget" type="range" max="100" value="0"/>
-            <input id="zoom-widget" type="range" max="100" value="0"/>
+            <button id="zoomin-widget" class="btn" type="button">
+                <div class="zoomin-icon">
+                    <svg viewBox="0 0 20 20" preserveAspectRatio="xMidYMid">
+                    <rect class="fill" width="6" height="20" x="7" y="0"></rect>
+                    <rect class="fill" width="20" height="6" x="0" y="7"></rect>
+                    </svg>
+                </div>
+            </button>
+            <button id="zoomout-widget" class="btn" type="button">
+                <div class="zoomout-icon">
+                    <svg viewBox="0 0 20 20" preserveAspectRatio="xMidYMid">
+                    <rect class="fill" width="20" height="6" x="0" y="7"></rect>
+                    </svg>
+                </div>
+            </button>
+            <button id="resetview-widget" class="btn" type="button">
+                <div class="resetview-icon">
+                    <svg viewBox="0 0 20 20" preserveAspectRatio="xMidYMid">
+                    <polygon class="fill" points="0,10 10,0 20,10"></polygon>
+                    <rect class="fill" width="20" height="10" x="0" y="10"></rect>
+                    </svg>
+                </div>
+            </button>
+            <div id="progress-widget" class="progress">
+               <p class="progress-bar">&nbsp;</p>
+            </div>
         </div>
     </div>
 

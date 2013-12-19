@@ -26,7 +26,8 @@ var Plot = function() {
         title: null,
         play: null,
         progress: null,
-        zoom: null,
+        zoomIn: null,
+        zoomOut: null,
     };
 
     var timer = null;
@@ -36,15 +37,24 @@ var Plot = function() {
     var camY = 0;
     var mouseX = 0;
     var mouseY = 0;
+    var mouseZ = 0;
     var lastX = 0;
     var lastY = 0;
+    var zoom = 0;
+    var zoomSpeed = 0.1;
+    var zoomSpeedWheel = 0.2;
 
     var dragging = false;
+
+    var zoomInHeld = false;
+    var zoomOutHeld = false;
+    var progressHeld = false;
 
     this.minZoom = 1;
     this.maxZoom = 3;
     this.bgColor = "#eee";
-    this.axisFont = "8px Arial";
+    this.axisFont = "Arial";
+    this.axisFontSize = 10; // in pixels.
     this.axisLineColor = "#767676";
     this.axisLabelColor = "#000";
     this.defaultLineColor = "#000";
@@ -76,10 +86,23 @@ var Plot = function() {
         widgets.play = document.getElementById ('play-widget');
 
         widgets.progress = document.getElementById ('progress-widget');
-        widgets.progress.addEventListener('input', handleProgressChange.bind(this));
-        widgets.progress.addEventListener('change', handleProgressChange.bind(this));
+        widgets.progress.addEventListener('mouseup', handleProgress.bind(this));
+        widgets.progress.addEventListener('mousedown', handleProgress.bind(this));
+        widgets.progress.addEventListener('mousemove', handleProgress.bind(this));
+        widgets.progress.addEventListener('mouseleave', handleProgress.bind(this));
 
-        widgets.zoom = document.getElementById ('zoom-widget');
+        widgets.zoomIn = document.getElementById ('zoomin-widget');
+        widgets.zoomIn.addEventListener('mouseup', handleZoomIn.bind(this));
+        widgets.zoomIn.addEventListener('mousedown', handleZoomIn.bind(this));
+        widgets.zoomIn.addEventListener('mouseleave', handleZoomIn.bind(this));
+
+        widgets.zoomOut = document.getElementById ('zoomout-widget');
+        widgets.zoomOut.addEventListener('mouseup', handleZoomOut.bind(this));
+        widgets.zoomOut.addEventListener('mousedown', handleZoomOut.bind(this));
+        widgets.zoomOut.addEventListener('mouseleave', handleZoomOut.bind(this));
+
+        widgets.resetView = document.getElementById ('resetview-widget');
+        widgets.resetView.addEventListener('click', handleResetView.bind(this));
 
         context = canvas.getContext('2d');
 
@@ -96,11 +119,14 @@ var Plot = function() {
         ));
 
         timer = new Timer (5);
+
+        zoom = this.minZoom;
     }.bind(this);
 
     var handleMouseEnter = function(event) {
         mouseX = event.clientX - canvas.offsetLeft;
         mouseY = event.clientY - canvas.offsetTop;
+        mouseZ = 0;
     };
 
     var handleMouseLeave = function(event) {
@@ -110,6 +136,7 @@ var Plot = function() {
     var handleMouseMove = function(event) {
         mouseX = event.clientX - canvas.offsetLeft;
         mouseY = event.clientY - canvas.offsetTop;
+        mouseZ = 0;
     };
 
     var handleMouseUp = function(event) {
@@ -126,12 +153,59 @@ var Plot = function() {
     };
 
     var handleMouseWheel = function(event) {
-        widgets.zoom.value = parseInt(widgets.zoom.value) - event.deltaY;
+        mouseZ = event.deltaY;
     };
 
-    var handleProgressChange = function(event) {
-        this.pause ();
-        timer.elapsed = event.target.value / event.target.max * timer.duration;
+    var handleZoomIn = function(event) {
+        if (event.button == 0) {
+            if (event.type === "mousedown")
+                zoomInHeld = true
+            else if (event.type === "mouseup")
+                zoomInHeld = false;
+        }
+        if (event.type === "mouseleave")
+            zoomInHeld = false;
+    };
+
+    var handleZoomOut = function(event) {
+        if (event.button == 0) {
+            if (event.type === "mousedown")
+                zoomOutHeld = true
+            else if (event.type === "mouseup")
+                zoomOutHeld = false;
+        }
+        if (event.type === "mouseleave")
+            zoomOutHeld = false;
+    };
+
+    var handleResetView = function(event) {
+        zoom = this.minZoom;
+        camX = 0;
+        camY = 0;
+    };
+
+    var handleProgress = function(event) {
+        if (event.button == 0) {
+            if (event.type === "mousedown")
+                progressHeld = true
+            else if (event.type === "mouseup")
+                progressHeld = false;
+        }
+        if (event.type === "mouseleave")
+            progressHeld = false;
+        if (progressHeld) {
+            var progress = (event.clientX - widgets.progress.offsetLeft) / widgets.progress.clientWidth;
+            progress = clamp01 (progress);
+
+            this.pause ();
+            timer.elapsed = timer.duration * progress;
+            widgets.progress.childNodes [1].style.width = (progress * 100).toString () + "%";
+
+            widgets.progress.style.cursor = "grabbing";
+            widgets.progress.style.cursor = "-webkit-grabbing";
+        } else {
+            widgets.progress.style.cursor = "pointer";
+        }
     };
 
     var requestTick = (function() {
@@ -167,10 +241,6 @@ var Plot = function() {
     }.bind (this);
 
     var draw = function () {
-        context.setTransform (1, 0, 0, 1, 0, 0);
-        context.fillStyle = this.bgColor;
-        context.fillRect (0,0,canvas.width,canvas.height);
-
         if (dragging) {
             canvas.style.cursor = "grabbing";
             canvas.style.cursor = "-webkit-grabbing";
@@ -188,8 +258,33 @@ var Plot = function() {
             canvas.style.cursor = "-webkit-grab";
         }
 
-        var zoomProgress = parseInt(widgets.zoom.value) / parseInt(widgets.zoom.max);
-        var zoom = this.minZoom + (this.maxZoom - this.minZoom) * zoomProgress;
+        if (zoomInHeld) {
+            zoom += zoomSpeed;
+        } else if (zoomOutHeld) {
+            zoom -= zoomSpeed;
+        } else if (mouseZ != 0) {
+            var sign = mouseZ > 0 ? 1 : -1;
+            var normalise = mouseZ / mouseZ;
+            zoom += -sign * normalise * zoomSpeedWheel;
+        }
+        zoom = clamp (zoom, this.minZoom, this.maxZoom);
+
+        var progress = timer.progress();
+        if (playing) {
+            timer.elapsed += deltaSeconds;
+            widgets.progress.childNodes [1].style.width = (progress * 100).toString () + "%";
+        }
+        if (timer.finished()) {
+            playing = false;
+
+            // show play icon.
+            widgets.play.childNodes[1].hidden = false;
+            widgets.play.childNodes[3].hidden = true;
+        }
+
+        context.setTransform (1, 0, 0, 1, 0, 0);
+        context.fillStyle = this.bgColor;
+        context.fillRect (0,0,canvas.width,canvas.height);
 
         mat2d.identity (view);
         mat2d.scale (view, view, vec2.fromValues (zoom, zoom));
@@ -212,23 +307,12 @@ var Plot = function() {
             viewProj[5] + 0.5
         );
 
-        if (timer.finished()) {
-            playing = false;
-
-            // show play icon.
-            widgets.play.childNodes[1].hidden = false;
-            widgets.play.childNodes[3].hidden = true;
-        }
-
-        var progress = timer.progress();
-        if (playing) {
-            timer.elapsed += deltaSeconds;
-            widgets.progress.value = progress * widgets.progress.max;
-        }
-
         drawGrid (canvas.width, canvas.height, 32, 32);
         drawLines (config.points, progress);
         drawGridLabels (canvas.width, canvas.height, 32, 32);
+
+        // FIXME: reset mouse z for the next frame.
+        mouseZ = 0;
     }.bind (this);
 
     var drawGrid = function(width, height, deltaX, deltaY) {
@@ -306,7 +390,7 @@ var Plot = function() {
         context.save ();
 
         // label x-axis.
-        context.font = this.axisFont;
+        context.font = this.axisFontSize.toString() + "px" + " " + this.axisFont;
         context.textAlign = "center";
         context.textBaseline = "top";
         context.fillStyle = this.axisLabelColor;
@@ -318,7 +402,7 @@ var Plot = function() {
         }
 
         // label y-axis.
-        context.font = this.axisFont;
+        context.font = this.axisFontSize.toString() + "px" + " " + this.axisFont;
         context.textAlign = "right";
         context.textBaseline = "middle";
         context.fillStyle = this.axisLabelColor;
@@ -399,18 +483,27 @@ var Plot = function() {
         this.elapsed = 0;
         this.duration = _duration;
         this.progress = function () {
-            return clamp01 (this.elapsed / this.duration, 0);
+            return clamp01 (this.elapsed / this.duration);
         };
         this.finished = function () {
             return this.elapsed >= this.duration;
         };
-        var clamp01 = function (value) {
-            if (value > 1)
-                return 1;
-            else if (value < 0)
-                return 0;
-            else
-                return value;
-        };
+    };
+
+    var lerp = function (a, b, progress) {
+        return a + (b - a) * progress;
+    };
+
+    var clamp = function (value, min, max) {
+        if (value < min)
+            return min;
+        else if (value > max)
+            return max;
+        else
+            return value;
+    };
+
+    var clamp01 = function (value) {
+        return clamp (value, 0, 1);
     };
 };
