@@ -84,6 +84,7 @@ var Plot = function() {
         widgets.title.innerHTML = config.title;
 
         widgets.play = document.getElementById ('play-widget');
+        widgets.play.addEventListener('click', this.toggle.bind(this));
 
         widgets.progress = document.getElementById ('progress-widget');
         widgets.progress.addEventListener('mouseup', handleProgress.bind(this));
